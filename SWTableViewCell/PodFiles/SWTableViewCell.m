@@ -45,35 +45,9 @@
 
 #pragma mark Initializers
 
-- (instancetype)initWithStyle:(UITableViewCellStyle)style reuseIdentifier:(NSString *)reuseIdentifier containingTableView:(UITableView *)containingTableView leftUtilityButtons:(NSArray *)leftUtilityButtons rightUtilityButtons:(NSArray *)rightUtilityButtons
-{
-    self = [super initWithStyle:style reuseIdentifier:reuseIdentifier];
-    if (self)
-    {
-        [self initializer];
-        self.containingTableView = containingTableView;
-        self.rightUtilityButtons = rightUtilityButtons;
-        self.leftUtilityButtons = leftUtilityButtons;
-    }
-    
-    return self;
-}
-
 - (instancetype)initWithCoder:(NSCoder *)aDecoder
 {
     self = [super initWithCoder:aDecoder];
-    
-    if (self)
-    {
-        [self initializer];
-    }
-    
-    return self;
-}
-
-- (instancetype)init
-{
-    self = [super init];
     
     if (self)
     {
@@ -119,6 +93,7 @@
     
     self.tapGestureRecognizer = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(scrollViewTapped:)];
     self.tapGestureRecognizer.cancelsTouchesInView = NO;
+    self.tapGestureRecognizer.delegate             = self;
     [self.cellScrollView addGestureRecognizer:self.tapGestureRecognizer];
     
     self.longPressGestureRecognizer = [[SWLongPressGestureRecognizer alloc] initWithTarget:self action:@selector(scrollViewPressed:)];
@@ -535,7 +510,7 @@ static NSString * const kTableViewPanState = @"state";
 {
     if (velocity.x >= 0.5f)
     {
-        if (_cellState == kCellStateLeft)
+        if (_cellState == kCellStateLeft || !self.rightUtilityButtons || self.rightUtilityButtonsWidth == 0.0)
         {
             _cellState = kCellStateCenter;
         }
@@ -546,7 +521,7 @@ static NSString * const kTableViewPanState = @"state";
     }
     else if (velocity.x <= -0.5f)
     {
-        if (_cellState == kCellStateRight)
+        if (_cellState == kCellStateRight || !self.leftUtilityButtons || self.leftUtilityButtonsWidth == 0.0)
         {
             _cellState = kCellStateCenter;
         }
@@ -649,6 +624,15 @@ static NSString * const kTableViewPanState = @"state";
     [self updateCellState];
 }
 
+-(void)scrollViewDidEndDragging:(UIScrollView *)scrollView willDecelerate:(BOOL)decelerate
+{
+    if (!decelerate)
+    {
+        self.tapGestureRecognizer.enabled = YES;
+    }
+    
+}
+
 #pragma mark - UIGestureRecognizerDelegate
 
 - (BOOL)gestureRecognizer:(UIGestureRecognizer *)gestureRecognizer shouldRecognizeSimultaneouslyWithGestureRecognizer:(UIGestureRecognizer *)otherGestureRecognizer
@@ -663,6 +647,11 @@ static NSString * const kTableViewPanState = @"state";
     {
         return NO;
     }
+}
+
+-(BOOL)gestureRecognizer:(UIGestureRecognizer *)gestureRecognizer shouldReceiveTouch:(UITouch *)touch
+{
+    return ![touch.view isKindOfClass:[UIControl class]];
 }
 
 @end
